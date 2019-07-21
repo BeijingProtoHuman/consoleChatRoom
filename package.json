@@ -1,0 +1,20 @@
+{
+  "name": "chatapplication2",
+  "version": "1.0.0",
+  "description": "the second version of chat application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "console",
+    "style",
+    "chat",
+    "room"
+  ],
+  "author": "Shuopeng Li",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.15.3"
+  }
+}
