@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>console</title>
+	<meta charset="UTF-8" />
+		
+	<style type="text/css">	
+	body{
+		background: black;
+		color: rgba(71,225,15,1.0);
+	}
+	#messages {
+		list-style-type: none; 
+		margin: 0; 
+		padding: 0;
+	}
+	#consolePanel{
+
+	}
+	input{
+		color: rgba(71,225,15,1.0);
+		font-size: 15px;
+		background: none;
+		border:none;
+	}
+	input:focus{
+		outline: none;
+	}
+	</style>
+	<script src="/socket.io/socket.io.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+</head>
+<body>
+	<ul id="messages"></ul>
+	<form id="form" action="" onsubmit="return submitfunction();" > 
+	<span id ="infoSource"></span><input type="hidden" id="user" value="" /><input id = "textInput" type="text" name="inputText" value=""></form>
+	<script type="text/javascript">
+		var socket = io();
+		//this varibale is used to keep the variable value which is waiting for the confirmation from user
+		var waitConfirm = '';
+		//this is the text of help menu
+		var helpText = '-ls : list all the users in this chat room<br>-cl : clear all the text on the screen<br>-up : screen moves up';
+		//this is the history queue
+		var inputHistory = [];
+		//the current index of inputHistory 
+		var historyIndex = 0;
+		//this part is for initiation of chat system
+		$('#infoSource').text('UserName :');
+
+
+
+		//this part code is used to keep focusing on the console input
+		setInterval(function(){
+			var textInputElement = document.getElementById("textInput");
+			textInputElement.focus();
+			//alert(document.activeElement.id);
+		}, 100);
+
+		socket.on('chatMessage', function(from, msg){
+		  	var me = $('#user').val();
+		  	var color = '';
+		  	if(from == me){
+		  		color ='';
+		  	}else if(from == 'System'){
+		  		color = 'rgb(40,138,245)';
+		  	}else{
+		  		color ='';
+		  	}
+		  	if(from== me){
+		  	}else{
+		  		$('#messages').append('<li><b style="color:' + color + '">' + from + '</b>: ' + msg + '</li>');
+		  	}
+		  	
+		});
+
+		socket.on('get users',function(data){
+		  	var displayContent = '';
+		  	var currentUsers = data;
+		  	for(var i =0; i < data.length; i++){
+		    	displayContent = displayContent + '<b> ' +data[i]+' /  </b>';
+		  	}
+		  	$('#messages').append('<li><b style="color:' + 'rgb(40,138,245)' + '">' + 'CurrentUsersList' + '</b>: ' + displayContent + '</li>');
+		});
+
+		//this function is the core function of console input
+		function submitfunction(){
+		  	var from = $('#user').val();
+		  	var $sourceText = $('#infoSource');
+		  	var message = $('#textInput').val();
+		  	var screenHeight = $(window).height(); 
+		  	if(from != ''){				
+			  	if(message != '') {
+			  		if(message == '-cl'){
+			  			$('#messages').text('');
+			  		}else if(message == '-help'){
+			  			$('#messages').append('<li>'+helpText+'</li>');
+			  		}else if(message == '-up'){
+			  			$('body').scrollTop($('body').scrollTop()-screenHeight);
+			  		}else{
+				    	socket.emit('chatMessage', from, message);
+			  		}
+			  		//intiate the history index flag
+			  		historyIndex =0;
+			  		//upidate the input history
+			  		updateInputHistory(message);
+			  		$('#messages').append('<li><b>$'+from+'</b>:~ '+message+'</li>');	
+			  	}
+			}else{
+				//this part is used to set the username from console input
+				if(waitConfirm !=''){
+					if(message.toUpperCase() == 'Y'){
+						$('#user').val(waitConfirm);
+						socket.emit('chatMessage', 'System', waitConfirm);
+					    $sourceText.text('$'+waitConfirm+':~ ');
+					    //initiate the value for reusing
+					    waitConfirm ='';	
+					}
+					else{
+						$sourceText.text('UserName :');
+						waitConfirm ='';
+					}
+				}else{
+					$('#messages').append('<li><b style="color:rgb(40,138,245)" >System</b>:  The username will be <b>'+message+'</b> Y/N?</li>');
+					waitConfirm = message;
+					$sourceText.text('');
+				}
+			}
+			//empty the console input part
+			$('#textInput').val('');
+		  	return false;
+		}
+		//this function is used to listen the keyboard operation of this
+		$('#textInput').keyup(function(event){
+			if(event.which == 38){
+				//up arrow key
+				if(historyIndex == inputHistory.length){
+
+				}else{
+					historyIndex++;
+				}
+				$('#textInput').val(getInputHistory(historyIndex));
+			}else if(event.which == 40){
+				//down arrow key
+				if(historyIndex == 0){
+					$('#textInput').val('');
+				}else{
+				   historyIndex--;
+					$('#textInput').val(getInputHistory(historyIndex));
+				}
+				
+			}else{}
+			return false;
+		});
+		$('#textInput').keydown(function(event){
+			if(event.which == 38){
+				return false;
+			}
+		});
+
+		//this function is used to check whether the username input is right or not 
+		function checkName(inputName){
+		}
+
+		//this part is used to implement a stack structure for the input history
+		//the combination of enqueue and dequeue function in queue structure
+		function updateInputHistory(element){
+			var historySize = 10;
+			if(inputHistory.length == historySize){
+				inputHistory.shift();
+				inputHistory.push(element);
+			}else {
+				inputHistory.push(element);
+			}
+		}
+		//like top function in stack structure
+		function getInputHistory(){
+			var resultContent = inputHistory[inputHistory.length - historyIndex];
+			return resultContent;
+		}
+	</script>
+</body>
+</html>
